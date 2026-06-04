@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Damage Detection AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="%23ffffff" fill-opacity="0.05" d="M50 10 L60 30 L80 30 L65 45 L75 65 L50 50 L25 65 L35 45 L20 30 L40 30 Z"/></svg>');
+            background-size: 100px 100px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.9;
+            color: #cbd5e1;
+            font-weight: 300;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .upload-box, .camera-box {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-box::before, .camera-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent, rgba(37, 99, 235, 0.05));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .upload-box:hover, .camera-box:hover {
+            transform: scale(1.03) translateY(-5px);
+            border-color: #3b82f6;
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15);
+        }
+
+        .upload-box:hover::before, .camera-box:hover::before {
+            opacity: 1;
+        }
+
+        .upload-box h3, .camera-box h3 {
+            color: #0f172a;
+            margin-bottom: 15px;
+            font-size: 1.6em;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-box p, .camera-box p {
+            color: #64748b;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2em;
+            color: white;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .camera-box .icon-circle {
+            background: linear-gradient(135deg, #7c3aed, #5b21b6);
+            box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            font-size: 16px;
+            border: none;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .file-input-label::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        }
+
+        .file-input-label:hover::before {
+            left: 100%;
+        }
+
+        .camera-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #7c3aed, #5b21b6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3);
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .camera-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .camera-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(124, 58, 237, 0.4);
+            background: linear-gradient(135deg, #5b21b6, #4c1d95);
+        }
+
+        .camera-btn:hover::before {
+            left: 100%;
+        }
+
+        .camera-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .camera-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 1px solid #e0e0e0;
+        }
+
+        #video {
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .capture-btn, .close-camera-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .capture-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            box-shadow: 0 2px 5px rgba(39, 174, 96, 0.2);
+        }
+
+        .capture-btn:hover {
+            background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .close-camera-btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            box-shadow: 0 2px 5px rgba(231, 76, 60, 0.2);
+        }
+
+        .close-camera-btn:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 40px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .image-container {
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .image-container:hover {
+            transform: translateY(-5px);
+        }
+
+        .image-container h4 {
+            color: #0f172a;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .detections-info {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 16px;
+            margin-top: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .detections-info h4 {
+            color: #0f172a;
+            margin-bottom: 25px;
+            font-weight: 700;
+            font-size: 1.4em;
+        }
+
+        .detection-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 25px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+            backdrop-filter: blur(5px);
+            margin-bottom: 15px;
+            border-radius: 12px;
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .detection-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .detection-class {
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 1.1em;
+        }
+
+        .detection-confidence {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-size: 0.95em;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 40px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            margin: 40px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(59, 130, 246, 0.1);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 25px;
+        }
+
+        .loading p {
+            font-size: 1.2em;
+            color: #0f172a;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: none;
+            border: 1px solid #fecaca;
+            font-weight: 500;
+        }
+
+        .cost-report {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(15px);
+            padding: 35px;
+            border-radius: 20px;
+            margin-top: 30px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 0 15px 40px rgba(59, 130, 246, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cost-report::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #7c3aed, #3b82f6);
+            background-size: 200% 100%;
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .cost-summary {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(124, 58, 237, 0.05));
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .cost-summary h5 {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 15px;
+        }
+
+        .cost-summary p {
+            font-size: 1.2em;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .damages-breakdown {
+            margin-bottom: 30px;
+        }
+
+        .damage-item {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+            backdrop-filter: blur(8px);
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 16px;
+            border-left: 4px solid #3b82f6;
+            border: 1px solid rgba(255,255,255,0.4);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .damage-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(59, 130, 246, 0.2);
+        }
+
+        .damage-header {
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .damage-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            font-size: 0.95em;
+        }
+
+        .damage-detail {
+            background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+            backdrop-filter: blur(5px);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .damage-detail strong {
+            color: #3b82f6;
+            font-weight: 700;
+        }
+
+        .additional-info {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .info-item strong {
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .info-item ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .info-item li {
+            margin-bottom: 8px;
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .info-item p {
+            color: #475569;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+            margin-top: 20px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .upload-section, .results-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+        <div class="header-content">
+            <h1>Car Damage Detection AI</h1>
+            <p>Advanced AI-powered vehicle damage assessment and cost estimation</p>
+        </div>
+    </div>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="upload-box">
+                    <div class="icon-circle">📁</div>
+                    <h3>Upload Image</h3>
+                    <p>Select a car image from your device</p>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" class="file-input" accept="image/*">
+                        <label for="fileInput" class="file-input-label">
+                            <span>📤</span>
+                            <span>Choose Image</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="camera-box">
+                    <div class="icon-circle">📷</div>
+                    <h3>Take Photo</h3>
+                    <p>Use your camera to capture car damage</p>
+                    <button class="camera-btn" onclick="openCamera()">
+                        <span>📸</span>
+                        <span>Open Camera</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing image for car damage...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+
+            <div class="results-section" id="results">
+                <h3 style="text-align: center; color: #2c3e50; margin-bottom: 20px;">🔍 Detection Results</h3>
+                
+                <div class="results-grid">
+                    <div class="image-container">
+                        <h4>Original Image</h4>
+                        <img id="originalImage" src="" alt="Original">
+                    </div>
+                    <div class="image-container">
+                        <h4>Detected Damage</h4>
+                        <img id="resultImage" src="" alt="Results">
+                    </div>
+                </div>
+
+                <div class="detections-info">
+                    <h4>Damage Detected (<span id="detectionCount">0</span> items)</h4>
+                    <div id="detectionsList"></div>
+                </div>
+
+                <div class="cost-report" id="costReport" style="display: none;">
+                    <h4>💰 Cost Estimation Report</h4>
+                    
+                    <div class="cost-summary">
+                        <h5>📊 Total Estimated Cost: <span id="totalCost" style="color: #3b82f6; font-weight: 700;"></span></h5>
+                        <p><strong>🚨 Urgency Level:</strong> <span id="urgencyLevel" style="color: #7c3aed;"></span></p>
+                        <button class="download-btn" onclick="downloadReport()">
+                            <span>📥</span>
+                            <span>Download Report (PDF)</span>
+                        </button>
+                    </div>
+
+                    <div class="damages-breakdown">
+                        <h5>🔧 Damages Breakdown:</h5>
+                        <div id="damagesList"></div>
+                    </div>
+
+                    <div class="additional-info">
+                        <h5>⚠️ Safety & Recommendations:</h5>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <strong>🚨 Safety Concerns:</strong>
+                                <ul id="safetyConcerns"></ul>
+                            </div>
+                            <div class="info-item">
+                                <strong>🚗 Drivability:</strong>
+                                <p id="drivability"></p>
+                            </div>
+                            <div class="info-item">
+                                <strong>📋 Insurance Claim:</strong>
+                                <p id="insuranceSuggestion"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Modal -->
+    <div class="camera-modal" id="cameraModal">
+        <div class="camera-content">
+            <h3>📸 Capture Car Image</h3>
+            <video id="video" width="640" height="480" autoplay></video>
+            <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+            <div class="camera-controls">
+                <button class="capture-btn" onclick="capturePhoto()">📸 Capture</button>
+                <button class="close-camera-btn" onclick="closeCamera()">❌ Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stream = null;
+
+        // File upload handling
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                uploadImage(file);
+            }
+        });
+
+        // Upload image function
+        function uploadImage(file) {
+            showLoading();
+            hideError();
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'Upload failed');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Network error: ' + error.message);
+            });
+        }
+
+        // Camera functions
+        function openCamera() {
+            const modal = document.getElementById('cameraModal');
+            modal.style.display = 'flex';
+            
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(mediaStream) {
+                    stream = mediaStream;
+                    const video = document.getElementById('video');
+                    video.srcObject = stream;
+                })
+                .catch(function(err) {
+                    showError('Camera access denied: ' + err.message);
+                    closeCamera();
+                });
+        }
+
+        function closeCamera() {
+            const modal = document.getElementById('cameraModal');
+            modal.style.display = 'none';
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            
+            context.drawImage(video, 0, 0, 640, 480);
+            
+            // Convert to base64
+            const imageData = canvas.toDataURL('image/jpeg');
+            
+            closeCamera();
+            sendCameraImage(imageData);
+        }
+
+        function sendCameraImage(imageData) {
+            showLoading();
+            hideError();
+            
+            fetch('/camera_capture', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'Camera capture failed');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Network error: ' + error.message);
+            });
+        }
+
+        // Display results
+        function displayResults(data) {
+            const resultsSection = document.getElementById('results');
+            const originalImage = document.getElementById('originalImage');
+            const resultImage = document.getElementById('resultImage');
+            const detectionCount = document.getElementById('detectionCount');
+            const detectionsList = document.getElementById('detectionsList');
+            
+            // Display images
+            originalImage.src = '/static/' + data.original_image;
+            resultImage.src = '/static/' + data.result_image;
+            
+            // Display detections
+            detectionCount.textContent = data.total_detections;
+            detectionsList.innerHTML = '';
+            
+            if (data.detections.length === 0) {
+                detectionsList.innerHTML = '<p style="color: #64748b; font-size: 1.1em;">✅ No damage detected</p>';
+            } else {
+                data.detections.forEach(detection => {
+                    const item = document.createElement('div');
+                    item.className = 'detection-item';
+                    
+                    // Determine severity color based on confidence
+                    let confidenceColor = '#10b981'; // Green for high
+                    if (detection.confidence < 40) {
+                        confidenceColor = '#f59e0b'; // Yellow for low
+                    } else if (detection.confidence < 70) {
+                        confidenceColor = '#3b82f6'; // Blue for medium
+                    }
+                    
+                    item.innerHTML = `
+                        <div>
+                            <span class="detection-class">${detection.class}</span>
+                            <div style="font-size: 0.9em; color: #64748b; margin-top: 5px;">
+                                AI Confidence: ${detection.confidence}%
+                            </div>
+                        </div>
+                        <span class="detection-confidence" style="background: ${confidenceColor};">
+                            ${detection.confidence}%
+                        </span>
+                    `;
+                    detectionsList.appendChild(item);
+                });
+            }
+            
+            // Display cost report if available
+            if (data.cost_report) {
+                displayCostReport(data.cost_report);
+            }
+            
+            resultsSection.style.display = 'block';
+        }
+
+        // Download report function
+        function downloadReport() {
+            const costReport = document.getElementById('costReport');
+            const totalCost = document.getElementById('totalCost').textContent;
+            const urgencyLevel = document.getElementById('urgencyLevel').textContent;
+            
+            // Create a simple text report
+            let reportText = 'CAR DAMAGE ASSESSMENT REPORT\n';
+            reportText += '=' .repeat(50) + '\n\n';
+            reportText += `Total Estimated Cost: ${totalCost}\n`;
+            reportText += `Urgency Level: ${urgencyLevel}\n\n`;
+            
+            // Add damages
+            const damagesList = document.getElementById('damagesList');
+            const damageItems = damagesList.querySelectorAll('.damage-item');
+            damageItems.forEach(item => {
+                const header = item.querySelector('.damage-header').textContent;
+                const details = item.querySelectorAll('.damage-detail');
+                reportText += `${header}\n`;
+                details.forEach(detail => {
+                    reportText += `  - ${detail.textContent}\n`;
+                });
+                reportText += '\n';
+            });
+            
+            // Add safety concerns
+            const safetyConcerns = document.getElementById('safetyConcerns');
+            const concerns = safetyConcerns.querySelectorAll('li');
+            reportText += 'Safety Concerns:\n';
+            concerns.forEach(concern => {
+                reportText += `  - ${concern.textContent}\n`;
+            });
+            
+            // Create and download file
+            const blob = new Blob([reportText], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'car_damage_report.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Display cost report
+        function displayCostReport(costReport) {
+            const costReportDiv = document.getElementById('costReport');
+            const totalCost = document.getElementById('totalCost');
+            const urgencyLevel = document.getElementById('urgencyLevel');
+            const damagesList = document.getElementById('damagesList');
+            const safetyConcerns = document.getElementById('safetyConcerns');
+            const drivability = document.getElementById('drivability');
+            const insuranceSuggestion = document.getElementById('insuranceSuggestion');
+            
+            // Display total cost and urgency
+            totalCost.textContent = costReport.total_estimated_cost;
+            urgencyLevel.textContent = costReport.urgency_level;
+            
+            // Display damages breakdown
+            damagesList.innerHTML = '';
+            costReport.damages.forEach(damage => {
+                const damageItem = document.createElement('div');
+                damageItem.className = 'damage-item';
+                damageItem.innerHTML = `
+                    <div class="damage-header">
+                        ${damage.part} - ${damage.damage_type} (${damage.severity})
+                    </div>
+                    <div class="damage-details">
+                        <div class="damage-detail">
+                            <strong>Repair Cost:</strong><br>${damage.repair_cost}
+                        </div>
+                        <div class="damage-detail">
+                            <strong>Paint Cost:</strong><br>${damage.paint_cost}
+                        </div>
+                        <div class="damage-detail">
+                            <strong>Replacement Cost:</strong><br>${damage.replacement_cost}
+                        </div>
+                        <div class="damage-detail">
+                            <strong>Recommended Action:</strong><br>${damage.recommended_action}
+                        </div>
+                        <div class="damage-detail">
+                            <strong>Repair Time:</strong><br>${damage.repair_time}
+                        </div>
+                    </div>
+                `;
+                damagesList.appendChild(damageItem);
+            });
+            
+            // Display safety concerns
+            safetyConcerns.innerHTML = '';
+            costReport.safety_concerns.forEach(concern => {
+                const li = document.createElement('li');
+                li.textContent = concern;
+                safetyConcerns.appendChild(li);
+            });
+            
+            // Display other information
+            drivability.textContent = costReport.drivability;
+            insuranceSuggestion.textContent = costReport.insurance_suggestion;
+            
+            // Show cost report section
+            costReportDiv.style.display = 'block';
+        }
+
+        // UI helper functions
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

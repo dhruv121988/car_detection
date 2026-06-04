@@ -1,0 +1,26 @@
+# Google App Engine configuration
+runtime: python311
+
+entrypoint: gunicorn -b :$PORT wsgi:app --workers 2 --timeout 120
+
+env_variables:
+  FLASK_ENV: 'production'
+
+handlers:
+- url: /static
+  static_dir: static
+  secure: always
+
+- url: /.*
+  script: auto
+  secure: always
+
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+  target_cpu_utilization: 0.65
+
+resources:
+  cpu: 2
+  memory_gb: 4
+  disk_size_gb: 10

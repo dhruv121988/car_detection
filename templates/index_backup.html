@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Damage Detection AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255,255,255,0.3);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            transform: translateX(5px);
+        }
+
+        .sidebar-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.3);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .upload-section {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.3);
+            text-align: center;
+        }
+
+        .icon-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .icon-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.5em;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .icon-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+        }
+
+        .car-display {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.3);
+            text-align: center;
+        }
+
+        .car-display img {
+            max-width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .car-display img:hover {
+            transform: scale(1.02);
+        }
+
+        .results-section {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.3);
+            display: none;
+        }
+
+        .ai-assistant {
+            position: fixed;
+            right: 30px;
+            top: 100px;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .ai-assistant h4 {
+            color: #0f172a;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+
+        .ai-features {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        .ai-features li {
+            padding: 8px 0;
+            color: #475569;
+            font-size: 0.9em;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        .chat-input button {
+            padding: 10px 15px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .cost-panel {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.3);
+            margin-top: 30px;
+        }
+
+        .cost-panel h4 {
+            color: #0f172a;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .cost-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .cost-item:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #10b981;
+            padding-top: 15px;
+            border-top: 2px solid rgba(0,0,0,0.1);
+        }
+
+        .detection-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tag {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            border: 2px solid;
+        }
+
+        .tag.dent {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .tag.scratch {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+            border-color: #d97706;
+        }
+
+        .tag.crack {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .tag.glass {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+            border-color: #2563eb;
+        }
+
+        .tag.lamp {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+            border-color: #d97706;
+        }
+
+        .tag.tire {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .severity-tag {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .severity-minor {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+
+        .severity-moderate {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+        }
+
+        .severity-severe {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        .confidence-tag {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 40px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.3);
+            margin: 40px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(59, 130, 246, 0.1);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 25px;
+        }
+
+        .loading p {
+            font-size: 1.2em;
+            color: #0f172a;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: none;
+            border: 1px solid #fecaca;
+            font-weight: 500;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            font-size: 16px;
+            border: none;
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .file-input-label::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        }
+
+        .file-input-label:hover::before {
+            left: 100%;
+        }
+
+        .camera-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #7c3aed, #5b21b6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3);
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .camera-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .camera-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(124, 58, 237, 0.4);
+            background: linear-gradient(135deg, #5b21b6, #4c1d95);
+        }
+
+        .camera-btn:hover::before {
+            left: 100%;
+        }
+
+        .camera-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .camera-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 1px solid #e0e0e0;
+        }
+
+        #video {
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .capture-btn, .close-camera-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .capture-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            box-shadow: 0 2px 5px rgba(39, 174, 96, 0.2);
+        }
+
+        .capture-btn:hover {
+            background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .close-camera-btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            box-shadow: 0 2px 5px rgba(231, 76, 60, 0.2);
+        }
+
+        .close-camera-btn:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 40px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .image-container {
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .image-container:hover {
+            transform: translateY(-5px);
+        }
+
+        .image-container h4 {
+            color: #0f172a;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .detections-info {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 16px;
+            margin-top: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .detections-info h4 {
+            color: #0f172a;
+            margin-bottom: 25px;
+            font-weight: 700;
+            font-size: 1.4em;
+        }
+
+        .detection-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 25px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+            backdrop-filter: blur(5px);
+            margin-bottom: 15px;
+            border-radius: 12px;
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .detection-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .detection-class {
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 1.1em;
+        }
+
+        .detection-confidence {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-size: 0.95em;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 40px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            margin: 40px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(59, 130, 246, 0.1);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 25px;
+        }
+
+        .loading p {
+            font-size: 1.2em;
+            color: #0f172a;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: none;
+            border: 1px solid #fecaca;
+            font-weight: 500;
+        }
+
+        .cost-report {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(15px);
+            padding: 35px;
+            border-radius: 20px;
+            margin-top: 30px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 0 15px 40px rgba(59, 130, 246, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cost-report::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #7c3aed, #3b82f6);
+            background-size: 200% 100%;
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .cost-summary {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(124, 58, 237, 0.05));
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .cost-summary h5 {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 15px;
+        }
+
+        .cost-summary p {
+            font-size: 1.2em;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .damages-breakdown {
+            margin-bottom: 30px;
+        }
+
+        .damage-item {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+            backdrop-filter: blur(8px);
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 16px;
+            border-left: 4px solid #3b82f6;
+            border: 1px solid rgba(255,255,255,0.4);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .damage-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(59, 130, 246, 0.2);
+        }
+
+        .damage-header {
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .damage-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            font-size: 0.95em;
+        }
+
+        .damage-detail {
+            background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+            backdrop-filter: blur(5px);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .damage-detail strong {
+            color: #3b82f6;
+            font-weight: 700;
+        }
+
+        .additional-info {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .info-item strong {
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .info-item ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .info-item li {
+            margin-bottom: 8px;
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .info-item p {
+            color: #475569;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+            margin-top: 20px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .upload-section, .results-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            .error {
+                background: linear-gradient(135deg, #fef2f2, #fee2e2);
+                color: #dc2626;
+                padding: 20px;
+                border-radius: 12px;
+                margin: 20px 0;
+                display: none;
+                border: 1px solid #fecaca;
+                font-weight: 500;
+            }
+
+            .cost-report {
+                background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+                backdrop-filter: blur(15px);
+                padding: 35px;
+                border-radius: 20px;
+                margin-top: 30px;
+                border: 2px solid rgba(59, 130, 246, 0.3);
+                box-shadow: 0 15px 40px rgba(59, 130, 246, 0.15);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .cost-report::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: linear-gradient(90deg, #3b82f6, #7c3aed, #3b82f6);
+                background-size: 200% 100%;
+                animation: shimmer 3s linear infinite;
+            }
+
+            @keyframes shimmer {
+                0% { background-position: -200% 0; }
+                100% { background-position: 200% 0; }
+            }
+
+            .cost-summary {
+                background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(124, 58, 237, 0.05));
+                backdrop-filter: blur(10px);
+                padding: 25px;
+                border-radius: 16px;
+                margin-bottom: 30px;
+                text-align: center;
+                border: 1px solid rgba(59, 130, 246, 0.2);
+            }
+
+            .cost-summary h5 {
+                font-size: 1.8em;
+                font-weight: 700;
+                color: #0f172a;
+                margin-bottom: 15px;
+            }
+
+            .cost-summary p {
+                font-size: 1.2em;
+                color: #475569;
+                font-weight: 600;
+            }
+
+            .damages-breakdown {
+                margin-bottom: 30px;
+            }
+
+            .damage-item {
+                background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+                backdrop-filter: blur(8px);
+                padding: 25px;
+                margin-bottom: 20px;
+                border-radius: 16px;
+                border-left: 4px solid #3b82f6;
+                border: 1px solid rgba(255,255,255,0.4);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                transition: all 0.3s ease;
+            }
+
+            .damage-item:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 12px 35px rgba(59, 130, 246, 0.2);
+            }
+
+            .damage-header {
+                font-weight: 700;
+                color: #0f172a;
+                margin-bottom: 20px;
+                font-size: 1.2em;
+            }
+
+            .damage-details {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 15px;
+                font-size: 0.95em;
+            }
+
+            .damage-detail {
+                background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+                backdrop-filter: blur(5px);
+                padding: 15px;
+                border-radius: 10px;
+                border: 1px solid rgba(255,255,255,0.3);
+            }
+
+            .damage-detail strong {
+                color: #3b82f6;
+                font-weight: 700;
+            }
+
+            .additional-info {
+                background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+                backdrop-filter: blur(10px);
+                padding: 25px;
+                border-radius: 16px;
+                border: 1px solid rgba(255,255,255,0.2);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            }
+
+            .info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 25px;
+                margin-top: 20px;
+            }
+
+            .info-item {
+                background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+                backdrop-filter: blur(8px);
+                padding: 20px;
+                border-radius: 12px;
+                border: 1px solid rgba(255,255,255,0.3);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            }
+
+            .info-item strong {
+                color: #0f172a;
+                font-weight: 700;
+                font-size: 1.1em;
+            }
+
+            .info-item ul {
+                margin: 10px 0;
+                padding-left: 20px;
+            }
+
+            .info-item li {
+                margin-bottom: 8px;
+                color: #dc2626;
+                font-weight: 600;
+            }
+
+            .info-item p {
+                color: #475569;
+                font-weight: 600;
+                margin-top: 5px;
+            }
+
+            .download-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 25px;
+                background: linear-gradient(135deg, #10b981, #059669);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 15px;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+                margin-top: 20px;
+            }
+
+            .download-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+            }
+
+            @media (max-width: 768px) {
+                .upload-section, .results-grid {
+                    grid-template-columns: 1fr;
+                }
+                
+                .header h1 {
+                    font-size: 2em;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="sidebar">
+            <a href="#" class="sidebar-item active">
+                <span>🏠</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="sidebar-item">
+                <span>🚗</span>
+                <span>Detect Damage</span>
+            </a>
+            <a href="#" class="sidebar-item">
+                <span>📊</span>
+                <span>Reports</span>
+            </a>
+            <a href="#" class="sidebar-item">
+                <span>⚙</span>
+                <span>Settings</span>
+            </a>
+        </div>
+
+        <div class="main-container">
+            <div class="header">
+                <h1>Car Damage Detection AI</h1>
+                <p>Advanced AI-powered vehicle damage assessment and cost estimation</p>
+            </div>
+
+            <div class="content-grid">
+                <div class="upload-section">
+                    <h3>Upload Car Image</h3>
+                    <p>Choose an image to analyze for damage</p>
+                    <div class="icon-buttons">
+                        <div class="icon-btn" onclick="document.getElementById('fileInput').click()">
+                            �
+                        </div>
+                        <div class="icon-btn" onclick="openCamera()">
+                            📷
+                        </div>
+                        <div class="icon-btn" onclick="analyzeImage()">
+                            �
+                        </div>
+                    </div>
+                    <input type="file" id="fileInput" class="file-input" accept="image/*" style="display: none;">
+                </div>
+
+                <div class="car-display">
+                    <h3>Car Image</h3>
+                    <div id="carImageContainer">
+                        <img src="https://via.placeholder.com/400x300/e2e8f0/64748b?text=Upload+Image+to+Analyze" alt="Car Image" id="carImage">
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-section" id="results">
+                <div class="detection-tags" id="detectionTags"></div>
+                
+                <div class="content-grid">
+                    <div class="cost-panel">
+                        <h4>💰 Cost Breakdown</h4>
+                        <div class="cost-breakdown" id="costBreakdown">
+                            <div class="cost-item">
+                                <span>Repair</span>
+                                <span id="repairCost">₹0</span>
+                            </div>
+                            <div class="cost-item">
+                                <span>Paint</span>
+                                <span id="paintCost">₹0</span>
+                            </div>
+                            <div class="cost-item">
+                                <span>Replacement</span>
+                                <span id="replacementCost">₹0</span>
+                            </div>
+                            <div class="cost-item">
+                                <span>TOTAL</span>
+                                <span id="totalCost">₹0-₹0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cost-panel">
+                        <h4>📋 Analysis Details</h4>
+                        <div id="analysisDetails"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing image for car damage...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+        </div>
+
+        <!-- AI Assistant -->
+        <div class="ai-assistant">
+            <h4>🤖 AI Assistant</h4>
+            <ul class="ai-features">
+                <li>• Detect Damage</li>
+                <li>• Estimate Cost</li>
+                <li>• Insurance Suggestion</li>
+            </ul>
+            <div class="chat-input">
+                <input type="text" placeholder="Ask me anything...">
+                <button>Send</button>
+        <div class="camera-content">
+            <h3>📸 Capture Car Image</h3>
+            <video id="video" width="640" height="480" autoplay></video>
+            <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+            <div class="camera-controls">
+                <button class="capture-btn" onclick="capturePhoto()">📸 Capture</button>
+                <button class="close-camera-btn" onclick="closeCamera()">❌ Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stream = null;
+
+        // File upload handling
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                uploadImage(file);
+            }
+        });
+
+        // Upload image function
+        function uploadImage(file) {
+            showLoading();
+            hideError();
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'Upload failed');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Network error: ' + error.message);
+            });
+        }
+
+        // Camera functions
+        function openCamera() {
+            const modal = document.getElementById('cameraModal');
+            modal.style.display = 'flex';
+            
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(mediaStream) {
+                    stream = mediaStream;
+                    const video = document.getElementById('video');
+                    video.srcObject = stream;
+                })
+                .catch(function(err) {
+                    showError('Camera access denied: ' + err.message);
+                    closeCamera();
+                });
+        }
+
+        function closeCamera() {
+            const modal = document.getElementById('cameraModal');
+            modal.style.display = 'none';
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            
+            context.drawImage(video, 0, 0, 640, 480);
+            
+            // Convert to base64
+            const imageData = canvas.toDataURL('image/jpeg');
+            
+            closeCamera();
+            sendCameraImage(imageData);
+        }
+
+        function sendCameraImage(imageData) {
+            showLoading();
+            hideError();
+            
+            fetch('/camera_capture', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'Camera capture failed');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Network error: ' + error.message);
+            });
+        }
+
+        // Display results
+        function displayResults(data) {
+            const resultsSection = document.getElementById('results');
+            const carImage = document.getElementById('carImage');
+            const detectionTags = document.getElementById('detectionTags');
+            const costBreakdown = document.getElementById('costBreakdown');
+            const analysisDetails = document.getElementById('analysisDetails');
+            
+            // Update car image
+            carImage.src = '/static/' + data.original_image;
+            
+            // Clear previous results
+            detectionTags.innerHTML = '';
+            costBreakdown.innerHTML = '';
+            analysisDetails.innerHTML = '';
+            
+            if (data.detections.length === 0) {
+                detectionTags.innerHTML = '<div class="tag" style="background: rgba(16, 185, 129, 0.1); color: #059669; border-color: #059669;">✅ No Damage Detected</div>';
+                
+                // Reset costs
+                document.getElementById('repairCost').textContent = '₹0';
+                document.getElementById('paintCost').textContent = '₹0';
+                document.getElementById('replacementCost').textContent = '₹0';
+                document.getElementById('totalCost').textContent = '₹0-₹0';
+            } else {
+                let totalRepair = 0;
+                let totalPaint = 0;
+                let totalReplacement = 0;
+                
+                data.detections.forEach(detection => {
+                    const damageType = detection.class;
+                    const confidence = detection.confidence;
+                    
+                    // Create damage type tag
+                    const tag = document.createElement('div');
+                    tag.className = `tag ${damageType}`;
+                    tag.textContent = damageType.charAt(0).toUpperCase() + damageType.slice(1);
+                    detectionTags.appendChild(tag);
+                    
+                    // Create severity tag
+                    let severity = 'minor';
+                    if (confidence >= 70) severity = 'severe';
+                    else if (confidence >= 40) severity = 'moderate';
+                    
+                    const severityTag = document.createElement('div');
+                    severityTag.className = `severity-tag severity-${severity}`;
+                    severityTag.textContent = severity.charAt(0).toUpperCase() + severity.slice(1);
+                    detectionTags.appendChild(severityTag);
+                    
+                    // Create confidence tag
+                    const confidenceTag = document.createElement('div');
+                    confidenceTag.className = 'confidence-tag';
+                    confidenceTag.textContent = `${confidence}% Confidence`;
+                    detectionTags.appendChild(confidenceTag);
+                    
+                    // Estimate costs (simplified)
+                    const repairCost = Math.floor(confidence * 100);
+                    const paintCost = Math.floor(confidence * 80);
+                    const replacementCost = Math.floor(confidence * 150);
+                    
+                    totalRepair += repairCost;
+                    totalPaint += paintCost;
+                    totalReplacement += replacementCost;
+                });
+                
+                // Update cost breakdown
+                document.getElementById('repairCost').textContent = `₹${totalRepair.toLocaleString()}`;
+                document.getElementById('paintCost').textContent = `₹${totalPaint.toLocaleString()}`;
+                document.getElementById('replacementCost').textContent = `₹${totalReplacement.toLocaleString()}`;
+                document.getElementById('totalCost').textContent = `₹${(totalRepair + totalPaint).toLocaleString()}-₹${(totalRepair + totalPaint + totalReplacement).toLocaleString()}`;
+                
+                // Add analysis details
+                const details = document.createElement('div');
+                details.innerHTML = `
+                    <p><strong>🚨 Urgency Level:</strong> ${data.detections.length > 2 ? 'Immediate' : 'Moderate'}</p>
+                    <p><strong>🚗 Drivability:</strong> ${data.detections.some(d => d.class === 'tire flat') ? 'Not recommended' : 'Safe to drive'}</p>
+                    <p><strong>📋 Insurance Claim:</strong> ${totalRepair + totalPaint > 5000 ? 'Recommended' : 'Consider deductible'}</p>
+                `;
+                analysisDetails.appendChild(details);
+            }
+            
+            // Display cost report if available
+            if (data.cost_report) {
+                displayCostReport(data.cost_report);
+            }
+            
+            resultsSection.style.display = 'block';
+        }
+
+        // Analyze image function
+        function analyzeImage() {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length > 0) {
+                uploadImage(fileInput.files[0]);
+            } else {
+                showError('Please select an image first');
+            }
+        }
+
+        // Display cost report
+        function displayCostReport(costReport) {
+            // Update cost breakdown with actual cost report data
+            if (costReport.damages && costReport.damages.length > 0) {
+                let totalRepair = 0;
+                let totalPaint = 0;
+                let totalReplacement = 0;
+                
+                costReport.damages.forEach(damage => {
+                    const repairRange = damage.repair_cost.replace(/[₹,]/g, '').split('-');
+                    const paintRange = damage.paint_cost.replace(/[₹,]/g, '').split('-');
+                    const replacementRange = damage.replacement_cost.replace(/[₹,]/g, '').split('-');
+                    
+                    if (repairRange.length === 2) {
+                        totalRepair += parseInt(repairRange[0]);
+                    }
+                    if (paintRange.length === 2 && damage.paint_cost !== 'Not required') {
+                        totalPaint += parseInt(paintRange[0]);
+                    }
+                    if (replacementRange.length === 2) {
+                        totalReplacement += parseInt(replacementRange[0]);
+                    }
+                });
+                
+                document.getElementById('repairCost').textContent = `₹${totalRepair.toLocaleString()}`;
+                document.getElementById('paintCost').textContent = `₹${totalPaint.toLocaleString()}`;
+                document.getElementById('replacementCost').textContent = `₹${totalReplacement.toLocaleString()}`;
+                document.getElementById('totalCost').textContent = costReport.total_estimated_cost;
+            }
+        }
+
+        // UI helper functions
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+            totalCost.textContent = costReport.total_estimated_cost;
+            urgencyLevel.textContent = costReport.urgency_level;
+            
+            // Display damages breakdown
+            damagesList.innerHTML = '';
+            costReport.damages.forEach(damage => {
+                const damageItem = document.createElement('div');
+                damageItem.className = 'damage-item';
+                damageItem.innerHTML = `
+                    <div class="damage-header">
+                        ${damage.part} - ${damage.damage_type} (${damage.severity})
+                    </div>
+                    <div class="damage-details">
+                        <div class="damage-detail">
+                            <strong>Repair Cost:</strong><br>${damage.repair_cost}
+                        </div>
+                        <div class="damage-detail">
+                            <strong>Paint Cost:</strong><br>${damage.paint_cost}
+                        </div>
+                        <div class="damage-detail">
+                            <strong>Replacement Cost:</strong><br>${damage.replacement_cost}
+                        </div>
+                        <div class="damage-detail">
+                            <strong>Recommended Action:</strong><br>${damage.recommended_action}
+                        </div>
+                        <div class="damage-detail">
+                            <strong>Repair Time:</strong><br>${damage.repair_time}
+                        </div>
+                    </div>
+                `;
+                damagesList.appendChild(damageItem);
+            });
+            
+            // Display safety concerns
+            safetyConcerns.innerHTML = '';
+            costReport.safety_concerns.forEach(concern => {
+                const li = document.createElement('li');
+                li.textContent = concern;
+                safetyConcerns.appendChild(li);
+            });
+            
+            // Display other information
+            drivability.textContent = costReport.drivability;
+            insuranceSuggestion.textContent = costReport.insurance_suggestion;
+            
+            // Show cost report section
+            costReportDiv.style.display = 'block';
+        }
+
+        // UI helper functions
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

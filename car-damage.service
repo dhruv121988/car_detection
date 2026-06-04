@@ -1,0 +1,19 @@
+# Systemd service file for Car Damage Detection App
+# Place this file in /etc/systemd/system/car-damage.service
+
+[Unit]
+Description=Car Damage Detection Web Application
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/car-damage-detection
+Environment="PATH=/var/www/car-damage-detection/.venv-prod/bin"
+ExecStart=/var/www/car-damage-detection/.venv-prod/bin/gunicorn wsgi:app --bind 127.0.0.1:5000 --workers 2 --timeout 120 --access-logfile /var/log/car-damage/access.log --error-logfile /var/log/car-damage/error.log
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
